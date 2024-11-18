@@ -36,7 +36,24 @@
 
         <button type="button" onclick="enviarFormulario()">Enviar Pedido</button>
     </form>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script>
+        emailjs.init("user_LclK2Irer3tFyNCua"); // Substitua pelo seu User ID do EmailJS
 
-    <script src="script.js"></script>
+        function enviarFormulario() {
+            const form = document.getElementById("pedidoForm");
+
+            emailjs.sendForm('service_lyco9nm', 'template_h7cjlj4', formData, 'user_LclK2Irer3tFyNCua')
+                .then((response) => {
+                    alert("Pedido enviado com sucesso!");
+                })
+                .catch((error) => {
+                    console.error("Erro ao enviar:", error);
+                    alert("Erro ao enviar o pedido. Tente novamente.");
+                });
+        }
+    </script>
 </body>
 </html>
