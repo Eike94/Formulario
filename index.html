@@ -45,7 +45,9 @@
         function enviarFormulario() {
             const form = document.getElementById("pedidoForm");
 
-            emailjs.sendForm('service_lyco9nm', 'template_h7cjlj4', formData, 'LclK2Irer3tFyNCua')
+            const formData = new FormData(form);
+
+            emailjs.sendForm('service_lyco9nm', 'template_h7cjlj4', form, 'user_LclK2Irer3tFyNCua')
                 .then((response) => {
                     alert("Pedido enviado com sucesso!");
                 })
