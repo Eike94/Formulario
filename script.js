@@ -1,6 +1,6 @@
 import emailjs from '@emailjs/browser';
 
-emailjs.init("user_LclK2Irer3tFyNCua"); // Substitua pelo seu ID de usuário do EmailJS
+emailjs.init("LclK2Irer3tFyNCua"); // Substitua pelo seu ID de usuário do EmailJS
 
 async function enviarFormulario() {
     const form = document.getElementById("pedidoForm");
