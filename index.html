@@ -3,58 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Upload para Google Drive</title>
+    <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
-    <h1>Formulário de Pedido de Camiseta</h1>
-    <form id="pedidoForm" enctype="multipart/form-data">
-        <label for="nome">Nome do Cliente:</label>
-        <input type="text" id="nome" name="nome" required><br><br>
-
-        <label for="cor">Cor do Tecido:</label>
-        <input type="text" id="cor" name="cor" required><br><br>
-
-        <label>Áreas a serem estampadas:</label><br>
-        <input type="checkbox" id="peito" name="estampa" value="Somente Peito">
-        <label for="peito">Somente Peito</label><br>
-        <input type="checkbox" id="costas" name="estampa" value="Somente Costas">
-        <label for="costas">Somente Costas</label><br>
-        <input type="checkbox" id="mangaDir" name="estampa" value="Manga Direita">
-        <label for="mangaDir">Manga Direita</label><br>
-        <input type="checkbox" id="mangaEsq" name="estampa" value="Manga Esquerda">
-        <label for="mangaEsq">Manga Esquerda</label><br><br>
-
-        <label for="tipo">Tipo de Camiseta:</label>
-        <input type="text" id="tipo" name="tipo" required><br><br>
-
-        <label for="anexo">Anexar Arquivo:</label>
-        <input type="file" id="anexo" name="anexo" accept="image/*"><br><br>
-
-        <label for="obs1">Observação:</label>
-        <textarea id="obs1" name="obs1"></textarea><br><br>
-
-        <button type="button" onclick="enviarFormulario()">Enviar Pedido</button>
+    <h1>Upload para Google Drive</h1>
+    <form id="uploadForm">
+        <label for="file">Selecione um arquivo:</label>
+        <input type="file" id="file" name="file" required><br><br>
+        <button type="button" onclick="handleUpload()">Enviar para Google Drive</button>
     </form>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
+
     <script>
-        emailjs.init("LclK2Irer3tFyNCua"); // Substitua pelo seu User ID do EmailJS
+        const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com'; // Substitua pelo seu ID do Cliente
+        const API_KEY = 'form-art'; // Substitua pela sua chave de API
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-        function enviarFormulario() {
-            const form = document.getElementById("pedidoForm");
-            const formData = new FormData(form);
-
-            emailjs.sendForm('service_lyco9nm', 'template_h7cjlj4', form, 'LclK2Irer3tFyNCua')
-                .then((response) => {
-                    alert("Pedido enviado com sucesso!");
-                })
-                .catch((error) => {
-                    console.error("Erro ao enviar:", error);
-                    alert("Erro ao enviar o pedido. Tente novamente.");
-                });
+        function authenticate() {
+            return gapi.auth2.getAuthInstance()
+                .signIn({scope: SCOPES})
+                .then(() => console.log("Autenticação bem-sucedida!"))
+                .catch((err) => console.error("Erro na autenticação", err));
         }
+
+        function loadClient() {
+            gapi.client.setApiKey(API_KEY);
+            return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest")
+                .then(() => console.log("Google Drive API carregada!"))
+                .catch((err) => console.error("Erro ao carregar API", err));
+        }
+
+        function handleUpload() {
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Por favor, selecione um arquivo.");
+                return;
+            }
+
+            authenticate().then(() => {
+                const metadata = {
+                    name: file.name,
+                    mimeType: file.type,
+                };
+
+                const formData = new FormData();
+                formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                formData.append('file', file);
+
+                fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${gapi.auth.getToken().access_token}`,
+                    },
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Upload concluído:", data);
+                    alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
+                })
+                .catch((err) => console.error("Erro no upload", err));
+            });
+        }
+
+        gapi.load("client:auth2", () => {
+            gapi.auth2.init({client_id: CLIENT_ID});
+        });
     </script>
 </body>
 </html>
