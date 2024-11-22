@@ -45,6 +45,7 @@
         const FOLDER_ID = '1f1sP_9Up6EU-aSJIMMrFanxbBd4nlL21'; // ID da pasta "Artes a Fazer"
 
         let accessToken = '';
+        let numeroPedido = 1; // Inicializa o número do pedido
 
         // Inicializar o cliente GIS
         window.onload = function () {
@@ -84,6 +85,7 @@
             });
 
             const pedido = `
+Número do Pedido: ${numeroPedido}
 Nome do Cliente: ${nome}
 Cor do Tecido: ${cor}
 Áreas a serem estampadas: ${areas.join(', ')}
@@ -92,7 +94,7 @@ Observação: ${obs1}
             `.trim();
 
             const metadata = {
-                name: `${nome}_pedido.txt`,
+                name: `Pedido_${numeroPedido}_${nome}.txt`, // Nome do arquivo com o número do pedido
                 mimeType: 'text/plain',
                 parents: [FOLDER_ID], // Define a pasta específica
             };
@@ -111,7 +113,7 @@ Observação: ${obs1}
                     body: formData,
                 });
                 const data = await response.json();
-                alert(`Pedido enviado para a pasta "Artes a Fazer"! Link do arquivo: https://drive.google.com/file/d/${data.id}/view`);
+                alert(`Pedido ${numeroPedido} enviado para a pasta "Artes a Fazer"! Link do arquivo: https://drive.google.com/file/d/${data.id}/view`);
             } catch (err) {
                 console.error('Erro ao enviar pedido:', err);
                 alert('Erro ao enviar o pedido.');
@@ -120,7 +122,7 @@ Observação: ${obs1}
             // Upload do arquivo anexo, se existir
             if (anexo) {
                 const anexoMetadata = {
-                    name: anexo.name,
+                    name: `Anexo_Pedido_${numeroPedido}_${anexo.name}`,
                     mimeType: anexo.type,
                     parents: [FOLDER_ID], // Define a pasta específica
                 };
@@ -138,11 +140,13 @@ Observação: ${obs1}
                         body: anexoFormData,
                     });
                     const anexoData = await anexoResponse.json();
-                    alert(`Arquivo anexo enviado para a pasta "Artes a Fazer"! Link do arquivo: https://drive.google.com/file/d/${anexoData.id}/view`);
+                    alert(`Arquivo anexo do Pedido ${numeroPedido} enviado para a pasta "Artes a Fazer"! Link do arquivo: https://drive.google.com/file/d/${anexoData.id}/view`);
                 } catch (err) {
                     console.error('Erro ao enviar o anexo:', err);
                 }
             }
+
+            numeroPedido++; // Incrementa o número do pedido após o envio
         }
     </script>
 </body>
