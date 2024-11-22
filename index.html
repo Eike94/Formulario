@@ -3,16 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload para Google Drive</title>
+    <title>Formulário de Pedido de Camiseta</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-    <h1>Upload para Google Drive</h1>
-    <form id="uploadForm">
-        <label for="file">Selecione um arquivo:</label>
-        <input type="file" id="file" name="file" required><br><br>
+    <h1>Formulário de Pedido de Camiseta</h1>
+    <form id="pedidoForm">
+        <label for="nome">Nome do Cliente:</label>
+        <input type="text" id="nome" name="nome" required><br><br>
+
+        <label for="cor">Cor do Tecido:</label>
+        <input type="text" id="cor" name="cor" required><br><br>
+
+        <label>Áreas a serem estampadas:</label><br>
+        <input type="checkbox" id="peito" name="estampa" value="Somente Peito">
+        <label for="peito">Somente Peito</label><br>
+        <input type="checkbox" id="costas" name="estampa" value="Somente Costas">
+        <label for="costas">Somente Costas</label><br>
+        <input type="checkbox" id="mangaDir" name="estampa" value="Manga Direita">
+        <label for="mangaDir">Manga Direita</label><br>
+        <input type="checkbox" id="mangaEsq" name="estampa" value="Manga Esquerda">
+        <label for="mangaEsq">Manga Esquerda</label><br><br>
+
+        <label for="tipo">Tipo de Camiseta:</label>
+        <input type="text" id="tipo" name="tipo" required><br><br>
+
+        <label for="obs1">Observação:</label>
+        <textarea id="obs1" name="obs1"></textarea><br><br>
+
+        <label for="anexo">Anexar Arquivo:</label>
+        <input type="file" id="anexo" name="anexo" accept="image/*,application/pdf"><br><br>
+
         <button type="button" id="authenticateButton">Autenticar</button>
-        <button type="button" onclick="handleUpload()">Enviar para Google Drive</button>
+        <button type="button" onclick="enviarPedido()">Enviar Pedido</button>
     </form>
 
     <script>
@@ -21,67 +45,101 @@
 
         let accessToken = '';
 
-        // Inicializar o cliente GIS quando a página carregar
+        // Inicializar o cliente GIS
         window.onload = function () {
             const tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
-                callback: function (response) {
+                callback: (response) => {
                     if (response.error) {
                         console.error('Erro ao obter o token:', response.error);
                     } else {
                         accessToken = response.access_token;
-                        console.log('Token obtido:', accessToken);
                         alert('Autenticação bem-sucedida!');
                     }
                 },
             });
 
-            document.getElementById('authenticateButton').addEventListener('click', function () {
+            document.getElementById('authenticateButton').addEventListener('click', () => {
                 tokenClient.requestAccessToken();
             });
         };
 
-        function handleUpload() {
+        async function enviarPedido() {
             if (!accessToken) {
                 alert('Por favor, autentique-se primeiro.');
                 return;
             }
 
-            const fileInput = document.getElementById('file');
-            const file = fileInput.files[0];
+            const nome = document.getElementById('nome').value;
+            const cor = document.getElementById('cor').value;
+            const tipo = document.getElementById('tipo').value;
+            const obs1 = document.getElementById('obs1').value;
+            const anexo = document.getElementById('anexo').files[0];
+            
+            const areas = [];
+            document.querySelectorAll('input[name="estampa"]:checked').forEach((checkbox) => {
+                areas.push(checkbox.value);
+            });
 
-            if (!file) {
-                alert('Por favor, selecione um arquivo.');
-                return;
-            }
+            const pedido = `
+Nome do Cliente: ${nome}
+Cor do Tecido: ${cor}
+Áreas a serem estampadas: ${areas.join(', ')}
+Tipo de Camiseta: ${tipo}
+Observação: ${obs1}
+            `.trim();
 
             const metadata = {
-                name: file.name,
-                mimeType: file.type,
+                name: `${nome}_pedido.txt`,
+                mimeType: 'text/plain',
             };
 
             const formData = new FormData();
             formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            formData.append('file', file);
+            formData.append('file', new Blob([pedido], { type: 'text/plain' }));
 
-            fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: formData,
-            })
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (data) {
-                console.log('Upload concluído:', data);
-                alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
-            })
-            .catch(function (err) {
-                console.error('Erro no upload:', err);
-            });
+            // Enviar pedido para o Google Drive
+            try {
+                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: formData,
+                });
+                const data = await response.json();
+                alert(`Pedido enviado! Link do arquivo: https://drive.google.com/file/d/${data.id}/view`);
+            } catch (err) {
+                console.error('Erro ao enviar pedido:', err);
+                alert('Erro ao enviar o pedido.');
+            }
+
+            // Upload do arquivo anexo, se existir
+            if (anexo) {
+                const anexoMetadata = {
+                    name: anexo.name,
+                    mimeType: anexo.type,
+                };
+
+                const anexoFormData = new FormData();
+                anexoFormData.append('metadata', new Blob([JSON.stringify(anexoMetadata)], { type: 'application/json' }));
+                anexoFormData.append('file', anexo);
+
+                try {
+                    const anexoResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: anexoFormData,
+                    });
+                    const anexoData = await anexoResponse.json();
+                    alert(`Arquivo anexo enviado! Link do arquivo: https://drive.google.com/file/d/${anexoData.id}/view`);
+                } catch (err) {
+                    console.error('Erro ao enviar o anexo:', err);
+                }
+            }
         }
     </script>
 </body>
