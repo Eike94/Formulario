@@ -3,7 +3,7 @@ const formidable = require('formidable-serverless');
 const fs = require('fs');
 
 // Configuração da conta de serviço
-const KEYFILEPATH = './service-account.json'; // Certifique-se de incluir o arquivo na pasta raiz do projeto
+const KEYFILEPATH = './service-account.json'; // Caminho para o arquivo JSON
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 const auth = new google.auth.GoogleAuth({
     keyFile: KEYFILEPATH,
@@ -78,6 +78,7 @@ Observação: ${obs1}
                     requestBody: { role: 'reader', type: 'anyone' },
                 });
                 anexoLink = `https://drive.google.com/uc?id=${anexoResponse.data.id}&export=download`;
+                fs.unlinkSync(files.anexo.path);
             }
 
             const mensagem = `
