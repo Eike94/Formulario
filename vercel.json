@@ -1,0 +1,6 @@
+{
+  "builds": [
+    { "src": "api/upload.js", "use": "@vercel/node" },
+    { "src": "pages/**", "use": "@vercel/static" }
+  ]
+}
