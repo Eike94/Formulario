@@ -22,11 +22,11 @@
         let accessToken = '';
 
         // Inicializar o cliente GIS quando a página carregar
-        window.onload = () => {
+        window.onload = function () {
             const tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
-                callback: (response) => {
+                callback: function (response) {
                     if (response.error) {
                         console.error('Erro ao obter o token:', response.error);
                     } else {
@@ -37,7 +37,7 @@
                 },
             });
 
-            document.getElementById('authenticateButton').addEventListener('click', () => {
+            document.getElementById('authenticateButton').addEventListener('click', function () {
                 tokenClient.requestAccessToken();
             });
         };
@@ -72,7 +72,17 @@
                 },
                 body: formData,
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (data) {
                 console.log('Upload concluído:', data);
-                alert
+                alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
+            })
+            .catch(function (err) {
+                console.error('Erro no upload:', err);
+            });
+        }
+    </script>
+</body>
+</html>
