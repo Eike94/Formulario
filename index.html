@@ -4,79 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload para Google Drive</title>
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <h1>Upload para Google Drive</h1>
     <form id="uploadForm">
         <label for="file">Selecione um arquivo:</label>
         <input type="file" id="file" name="file" required><br><br>
+        <button type="button" id="authenticateButton">Autenticar</button>
         <button type="button" onclick="handleUpload()">Enviar para Google Drive</button>
     </form>
 
     <script>
-        const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com'; // Substitua pelo seu CLIENT_ID
-        const API_KEY = 'AIzaSyCQeRFvYjGctXTsEMRYjNmik6K5ok3ATsM'; // Substitua pelo seu API_KEY
+        const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com'; // Substitua pelo seu Client ID
         const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-        // Autenticar usuário
-        function authenticate() {
-            return gapi.auth2.getAuthInstance()
-                .signIn({ scope: SCOPES })
-                .then(() => console.log("Autenticação bem-sucedida!"))
-                .catch(err => console.error("Erro na autenticação", err));
-        }
+        let accessToken = '';
 
-        // Carregar o cliente da API
-        function loadClient() {
-            gapi.client.setApiKey(API_KEY);
-            return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest")
-                .then(() => console.log("Google Drive API carregada!"))
-                .catch(err => console.error("Erro ao carregar API", err));
-        }
+        // Inicializar a Google Identity Services
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (response) => {
+                if (response.error) {
+                    console.error('Erro ao obter o token:', response.error);
+                } else {
+                    accessToken = response.access_token;
+                    console.log('Token obtido:', accessToken);
+                    alert('Autenticação bem-sucedida!');
+                }
+            },
+        });
 
-        // Upload para o Google Drive
+        // Iniciar autenticação ao clicar no botão
+        document.getElementById('authenticateButton').addEventListener('click', () => {
+            tokenClient.requestAccessToken();
+        });
+
+        // Função para realizar o upload do arquivo
         function handleUpload() {
+            if (!accessToken) {
+                alert('Por favor, autentique-se primeiro.');
+                return;
+            }
+
             const fileInput = document.getElementById('file');
             const file = fileInput.files[0];
 
             if (!file) {
-                alert("Por favor, selecione um arquivo.");
+                alert('Por favor, selecione um arquivo.');
                 return;
             }
 
-            authenticate().then(() => {
-                const metadata = {
-                    name: file.name,
-                    mimeType: file.type,
-                };
+            const metadata = {
+                name: file.name,
+                mimeType: file.type,
+            };
 
-                const formData = new FormData();
-                formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                formData.append('file', file);
+            const formData = new FormData();
+            formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            formData.append('file', file);
 
-                const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
-
-                fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: formData,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Upload concluído:", data);
-                    alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
-                })
-                .catch(err => console.error("Erro no upload", err));
-            });
+            fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Upload concluído:', data);
+                alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
+            })
+            .catch(err => console.error('Erro no upload:', err));
         }
-
-        // Inicializar o cliente Google API
-        gapi.load("client:auth2", () => {
-            gapi.auth2.init({ client_id: CLIENT_ID });
-        });
     </script>
 </body>
 </html>
