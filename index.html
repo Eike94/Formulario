@@ -21,27 +21,27 @@
 
         let accessToken = '';
 
-        // Inicializar a Google Identity Services
-        const tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (response) => {
-                if (response.error) {
-                    console.error('Erro ao obter o token:', response.error);
-                } else {
-                    accessToken = response.access_token;
-                    console.log('Token obtido:', accessToken);
-                    alert('Autenticação bem-sucedida!');
-                }
-            },
-        });
+        // Inicializar o cliente GIS quando a página carregar
+        window.onload = () => {
+            const tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (response) => {
+                    if (response.error) {
+                        console.error('Erro ao obter o token:', response.error);
+                    } else {
+                        accessToken = response.access_token;
+                        console.log('Token obtido:', accessToken);
+                        alert('Autenticação bem-sucedida!');
+                    }
+                },
+            });
 
-        // Iniciar autenticação ao clicar no botão
-        document.getElementById('authenticateButton').addEventListener('click', () => {
-            tokenClient.requestAccessToken();
-        });
+            document.getElementById('authenticateButton').addEventListener('click', () => {
+                tokenClient.requestAccessToken();
+            });
+        };
 
-        // Função para realizar o upload do arquivo
         function handleUpload() {
             if (!accessToken) {
                 alert('Por favor, autentique-se primeiro.');
@@ -75,10 +75,4 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Upload concluído:', data);
-                alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
-            })
-            .catch(err => console.error('Erro no upload:', err));
-        }
-    </script>
-</body>
-</html>
+                alert
