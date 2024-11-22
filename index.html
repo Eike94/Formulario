@@ -1,4 +1,45 @@
-<script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Pedido de Camiseta</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <h1>Formulário de Pedido de Camiseta</h1>
+    <form id="pedidoForm">
+        <label for="nome">Nome do Cliente:</label>
+        <input type="text" id="nome" name="nome" required><br><br>
+
+        <label for="cor">Cor do Tecido:</label>
+        <input type="text" id="cor" name="cor" required><br><br>
+
+        <label>Áreas a serem estampadas:</label><br>
+        <input type="checkbox" id="peito" name="estampa" value="Somente Peito">
+        <label for="peito">Somente Peito</label><br>
+        <input type="checkbox" id="costas" name="estampa" value="Somente Costas">
+        <label for="costas">Somente Costas</label><br>
+        <input type="checkbox" id="mangaDir" name="estampa" value="Manga Direita">
+        <label for="mangaDir">Manga Direita</label><br>
+        <input type="checkbox" id="mangaEsq" name="estampa" value="Manga Esquerda">
+        <label for="mangaEsq">Manga Esquerda</label><br><br>
+
+        <label for="tipo">Tipo de Camiseta:</label>
+        <input type="text" id="tipo" name="tipo" required><br><br>
+
+        <label for="obs1">Observação:</label>
+        <textarea id="obs1" name="obs1"></textarea><br><br>
+
+        <label for="anexo">Anexar Arquivo:</label>
+        <input type="file" id="anexo" name="anexo" accept="image/*,application/pdf"><br><br>
+
+        <button type="button" id="authenticateButton">Autenticar</button>
+        <button type="button" onclick="enviarPedido()">Enviar Pedido</button>
+    </form>
+
+   <script>
     const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
     const FOLDER_ID = '1f1sP_9Up6EU-aSJIMMrFanxbBd4nlL21';
@@ -111,3 +152,6 @@ ${anexoLink ? `*Arquivo em anexo:* ${anexoLink}` : ''}
         numeroPedido++;
     }
 </script>
+
+</body>
+</html>
