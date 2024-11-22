@@ -15,24 +15,27 @@
     </form>
 
     <script>
-        const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com'; // Substitua pelo seu ID do Cliente
-        const API_KEY = 'AIzaSyCQeRFvYjGctXTsEMRYjNmik6K5ok3ATsM'; // Substitua pela sua chave de API
+        const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com'; // Substitua pelo seu CLIENT_ID
+        const API_KEY = 'AIzaSyCQeRFvYjGctXTsEMRYjNmik6K5ok3ATsM'; // Substitua pelo seu API_KEY
         const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+        // Autenticar usuário
         function authenticate() {
             return gapi.auth2.getAuthInstance()
-                .signIn({scope: SCOPES})
+                .signIn({ scope: SCOPES })
                 .then(() => console.log("Autenticação bem-sucedida!"))
-                .catch((err) => console.error("Erro na autenticação", err));
+                .catch(err => console.error("Erro na autenticação", err));
         }
 
+        // Carregar o cliente da API
         function loadClient() {
             gapi.client.setApiKey(API_KEY);
             return gapi.client.load("https://content.googleapis.com/discovery/v1/apis/drive/v3/rest")
                 .then(() => console.log("Google Drive API carregada!"))
-                .catch((err) => console.error("Erro ao carregar API", err));
+                .catch(err => console.error("Erro ao carregar API", err));
         }
 
+        // Upload para o Google Drive
         function handleUpload() {
             const fileInput = document.getElementById('file');
             const file = fileInput.files[0];
@@ -52,10 +55,12 @@
                 formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
                 formData.append('file', file);
 
+                const accessToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+
                 fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${gapi.auth.getToken().access_token}`,
+                        Authorization: `Bearer ${accessToken}`,
                     },
                     body: formData,
                 })
@@ -64,12 +69,13 @@
                     console.log("Upload concluído:", data);
                     alert(`Arquivo enviado! Link: https://drive.google.com/file/d/${data.id}/view`);
                 })
-                .catch((err) => console.error("Erro no upload", err));
+                .catch(err => console.error("Erro no upload", err));
             });
         }
 
+        // Inicializar o cliente Google API
         gapi.load("client:auth2", () => {
-            gapi.auth2.init({client_id: CLIENT_ID});
+            gapi.auth2.init({ client_id: CLIENT_ID });
         });
     </script>
 </body>
