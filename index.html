@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulário de Pedido de Camiseta</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <h1>Formulário de Pedido de Camiseta</h1>
@@ -35,123 +34,60 @@
         <label for="anexo">Anexar Arquivo:</label>
         <input type="file" id="anexo" name="anexo" accept="image/*,application/pdf"><br><br>
 
-        <button type="button" id="authenticateButton">Autenticar</button>
         <button type="button" onclick="enviarPedido()">Enviar Pedido</button>
     </form>
 
-   <script>
-    const CLIENT_ID = '403119419604-jn15e6uanvpdut4bfeffpo44u2konkpj.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    const FOLDER_ID = '1f1sP_9Up6EU-aSJIMMrFanxbBd4nlL21';
-    const WHATSAPP_NUMBER = '5531999999999'; // Substitua pelo seu número de WhatsApp
+    <script>
+        async function enviarPedido() {
+            const formData = new FormData();
+            formData.append('nome', document.getElementById('nome').value);
+            formData.append('cor', document.getElementById('cor').value);
+            formData.append('tipo', document.getElementById('tipo').value);
+            formData.append('obs1', document.getElementById('obs1').value);
 
-    let accessToken = '';
-    let numeroPedido = 1; // Inicializa o número do pedido
+            // Adicionar as áreas selecionadas
+            const areas = [];
+            document.querySelectorAll('input[name="estampa"]:checked').forEach((checkbox) => {
+                areas.push(checkbox.value);
+            });
+            formData.append('areas', areas.join(', '));
 
-    window.onload = function () {
-        const tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (response) => {
-                if (response.error) {
-                    console.error('Erro ao obter o token:', response.error);
-                } else {
-                    accessToken = response.access_token;
-                    alert('Autenticação bem-sucedida!');
-                }
-            },
-        });
-
-        document.getElementById('authenticateButton').addEventListener('click', () => {
-            tokenClient.requestAccessToken();
-        });
-    };
-
-    async function enviarPedido() {
-        if (!accessToken) {
-            alert('Por favor, autentique-se primeiro.');
-            return;
-        }
-
-        const nome = document.getElementById('nome').value;
-        const cor = document.getElementById('cor').value;
-        const tipo = document.getElementById('tipo').value;
-        const obs1 = document.getElementById('obs1').value;
-        const anexo = document.getElementById('anexo').files[0];
-
-        const areas = [];
-        document.querySelectorAll('input[name="estampa"]:checked').forEach((checkbox) => {
-            areas.push(checkbox.value);
-        });
-
-        const pedido = `
-Número do Pedido: ${numeroPedido}
-Nome do Cliente: ${nome}
-Cor do Tecido: ${cor}
-Áreas a serem estampadas: ${areas.join(', ')}
-Tipo de Camiseta: ${tipo}
-Observação: ${obs1}
-        `.trim();
-
-        let anexoLink = '';
-
-        // Enviar arquivo anexo para o Google Drive
-        if (anexo) {
-            const anexoMetadata = {
-                name: `Anexo_Pedido_${numeroPedido}_${anexo.name}`,
-                mimeType: anexo.type,
-                parents: [FOLDER_ID],
-            };
-
-            const anexoFormData = new FormData();
-            anexoFormData.append('metadata', new Blob([JSON.stringify(anexoMetadata)], { type: 'application/json' }));
-            anexoFormData.append('file', anexo);
+            // Adicionar o arquivo anexado
+            const anexo = document.getElementById('anexo').files[0];
+            if (anexo) {
+                formData.append('anexo', anexo);
+            }
 
             try {
-                const anexoResponse = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                const response = await fetch('http://localhost:3000/upload', {
                     method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                    body: anexoFormData,
+                    body: formData,
                 });
-                const anexoData = await anexoResponse.json();
-                // Criar link público para o anexo
-                await fetch(`https://www.googleapis.com/drive/v3/files/${anexoData.id}/permissions`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        role: 'reader',
-                        type: 'anyone',
-                    }),
-                });
-                anexoLink = `https://drive.google.com/uc?id=${anexoData.id}&export=download`;
-            } catch (err) {
-                console.error('Erro ao enviar o anexo:', err);
-                alert('Erro ao enviar o anexo para o Google Drive.');
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Pedido enviado com sucesso!');
+                    // Enviar mensagem ao WhatsApp
+                    const mensagem = `
+*Pedido de Camiseta*\n
+*Número do Pedido:* ${result.numeroPedido}\n
+*Nome do Cliente:* ${result.nome}\n
+*Cor do Tecido:* ${result.cor}\n
+*Áreas a serem estampadas:* ${result.areas}\n
+*Tipo de Camiseta:* ${result.tipo}\n
+*Observação:* ${result.obs1}\n
+${result.anexoLink ? `*Arquivo em anexo:* ${result.anexoLink}` : ''}
+                    `.trim();
+                    const whatsappUrl = `https://wa.me/5531999999999?text=${encodeURIComponent(mensagem)}`;
+                    window.open(whatsappUrl, '_blank');
+                } else {
+                    alert('Erro ao enviar o pedido.');
+                }
+            } catch (error) {
+                console.error('Erro ao enviar o pedido:', error);
+                alert('Erro ao enviar o pedido.');
             }
         }
-
-        // Prepara a mensagem para WhatsApp
-        let mensagem = `
-*Pedido de Camiseta*\n
-*Número do Pedido:* ${numeroPedido}\n
-*Nome do Cliente:* ${nome}\n
-*Cor do Tecido:* ${cor}\n
-*Áreas a serem estampadas:* ${areas.join(', ')}\n
-*Tipo de Camiseta:* ${tipo}\n
-*Observação:* ${obs1}\n
-${anexoLink ? `*Arquivo em anexo:* ${anexoLink}` : ''}
-        `.trim();
-
-        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensagem)}`;
-        window.open(whatsappUrl, '_blank');
-        numeroPedido++;
-    }
-</script>
-
+    </script>
 </body>
 </html>
